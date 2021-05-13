@@ -7,12 +7,26 @@ const io = require('socket.io')(http, {
     cookie: false
 });
 
+let rooms = []
+
 
 // -------------------------------------ONCE A SOCKET HAS CONNECTED--------------------------------------
 
 io.on('connection', (socket) => {
 
-    console.log("connected")
+    console.log('We have a connection!');
+
+    socket.on('createRoom', (roomName) => {
+        console.log(roomName)
+        if (rooms.includes(roomName)) {
+            console.log('Error: room name already in use')
+        } else {
+            rooms.push(roomName)
+            socket.join(roomName)
+            console.log('created room: ' + roomName);
+            io.in(roomName).emit('createRoom', socket.id);
+        }
+    });
 
 });
 
