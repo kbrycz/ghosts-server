@@ -16,17 +16,33 @@ io.on('connection', (socket) => {
 
     console.log('We have a connection!');
 
-    socket.on('createRoom', (roomName) => {
-        console.log(roomName)
-        if (rooms.includes(roomName)) {
+    socket.on('createRoom', (obj) => {
+        console.log(obj)
+        if (rooms.includes(obj.roomName)) {
             console.log('Error: room name already in use')
         } else {
-            rooms.push(roomName)
-            socket.join(roomName)
-            console.log('created room: ' + roomName);
-            io.in(roomName).emit('createRoom', socket.id);
+            rooms.push(obj.roomName)
+            socket.join(obj.roomName)
+            console.log('created room: ' + obj.roomName);
+            io.in(obj.roomName).emit('createRoom', obj);
         }
     });
+
+    // socket.on('joinLobby', (roomName) => {
+    //     console.log("inside joinLobby");
+    //     if (rooms.includes(roomName)) {
+    //         rooms.push(roomName)
+    //         socket.join(roomName)
+    //         let obj = {
+    //             'room': roomName,
+    //             'id': socket.id
+    //         }
+    //         io.in(roomName).emit('joinRoom', obj);
+    //     } else {
+    //         console.log('Error: No room with this name')
+    //         socket.emit('noRoom', roomName);
+    //     }
+    // }) 
 
 });
 
