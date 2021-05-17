@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# Basic push to github
+
+git add .
+git status
+git commit -m "minor improvements/bug fixes"
+git push
