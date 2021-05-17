@@ -44,6 +44,7 @@ io.on('connection', (socket) => {
     socket.on('addPlayerToLobby', (obj) => {
         if (obj.roomName in rooms) {
             console.log("Room found with code " + obj.roomName)
+            socket.join(obj.roomName)
             io.to(rooms[obj.roomName].hostSocket).emit('addPlayerToLobby', obj.player);
         } else {
             console.log('Host deleted game with code ' + obj.roomName)
@@ -51,7 +52,9 @@ io.on('connection', (socket) => {
     }) 
 
     socket.on('hostUpdatePlayerToLobby', (obj) => {
-        socket.to(obj.roomName).emit('updatePlayersArray', obj)
+        console.log("Got obj from host. Updating array for everyone")
+        console.log(obj.gameData.roomName)
+        socket.to(obj.gameData.roomName).emit('updatePlayersArray', obj)
     })
 });
 
