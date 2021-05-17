@@ -7,7 +7,7 @@ const io = require('socket.io')(http, {
     cookie: false
 });
 
-let rooms = []
+let rooms = {}
 
 
 // -------------------------------------ONCE A SOCKET HAS CONNECTED--------------------------------------
@@ -18,31 +18,41 @@ io.on('connection', (socket) => {
 
     socket.on('createRoom', (obj) => {
         console.log(obj)
-        if (rooms.includes(obj.roomName)) {
+        if (obj.roomName in rooms) {
             console.log('Error: room name already in use')
         } else {
-            rooms.push(obj.roomName)
+            rooms[obj.roomName] = {hostName: obj.hostName, hostSocket: socket.id}
             socket.join(obj.roomName)
             console.log('created room: ' + obj.roomName);
             io.in(obj.roomName).emit('createRoom', obj);
         }
     });
 
-    // socket.on('joinLobby', (roomName) => {
-    //     console.log("inside joinLobby");
-    //     if (rooms.includes(roomName)) {
-    //         rooms.push(roomName)
-    //         socket.join(roomName)
-    //         let obj = {
-    //             'room': roomName,
-    //             'id': socket.id
-    //         }
-    //         io.in(roomName).emit('joinRoom', obj);
-    //     } else {
-    //         console.log('Error: No room with this name')
-    //         socket.emit('noRoom', roomName);
-    //     }
-    // }) 
+    socket.on('isRoomAvailable', (roomName) => {
+        console.log(roomName)
+        if (roomName in rooms) {
+            console.log("Room found with code " + roomName)
+            const obj = {roomName: roomName, hostName: rooms[roomName].hostName}
+            console.log(obj)
+            socket.emit('roomFound', obj)
+        } else {
+            console.log("No room found with code " + roomName)
+            socket.emit('roomNotFound', roomName)
+        }     
+    })
+
+    socket.on('addPlayerToLobby', (obj) => {
+        if (obj.roomName in rooms) {
+            console.log("Room found with code " + obj.roomName)
+            io.to(rooms[obj.roomName].hostSocket).emit('addPlayerToLobby', obj.player);
+        } else {
+            console.log('Host deleted game with code ' + obj.roomName)
+        }
+    }) 
+
+    socket.on('hostUpdatePlayerToLobby', (obj) => {
+        socket.to(obj.roomName).emit('updatePlayersArray', obj)
+    })
 
 });
 
