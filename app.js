@@ -53,7 +53,6 @@ io.on('connection', (socket) => {
     socket.on('hostUpdatePlayerToLobby', (obj) => {
         socket.to(obj.roomName).emit('updatePlayersArray', obj)
     })
-
 });
 
 // -----------------LISTEN ON PORT 80-----------------
