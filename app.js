@@ -16,6 +16,7 @@ io.on('connection', (socket) => {
 
     console.log('We have a connection!');
 
+    // -----------------Game Creation and joining-----------------
     socket.on('createRoom', (obj) => {
         console.log(obj)
         if (obj.roomName in rooms) {
@@ -55,6 +56,55 @@ io.on('connection', (socket) => {
         console.log("Got obj from host. Updating array for everyone")
         console.log(obj.gameData.roomName)
         socket.to(obj.gameData.roomName).emit('updatePlayersArray', obj)
+    })
+
+    socket.on('updateReadyUp', (obj) => {
+        console.log("A player has ready upped")
+        socket.to(obj.roomName).emit('updateReadyUp', obj.playersInLobby)
+    })
+
+    // -----------------Game Set up-----------------
+
+    function shuffle(a) {
+        for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+    }
+
+    socket.on('startGame', (obj) => {
+        console.log("Host wants to start game. Setting up now...")
+        let playersFinal = shuffle(obj.players)
+        const words = obj.gameData.wordSet
+        const count = 0
+        // Get all of the subtopic people in
+        for (let i = 0; i < obj.gameData.numSubs; ++i) {
+            playersFinal[i].word = words.subs[i]
+            count += 1
+        }
+        // Get all of the topic people in
+        for (let i = 0; i < obj.gameData.numTops; ++i) {
+            playersFinal[i].word = words.topic
+            playersFinal[i].isTopic = true
+            count += 1
+        }       
+        for (let i = 0; i < obj.gameData.numGhosts; ++i) {
+            playersFinal[i].word = 'ghost'
+            playersFinal[i].isGhost = true
+            count += 1
+        }
+        io.in(obj.gameData.roomName).emit("startGame", playersFinal)
+    })
+
+    socket.on('updateVote', (obj) => {
+        console.log("a player has voted/unvoted for the player with id: " + obj.voteId)
+        socket.in(obj.roomName).emit("updateVote", obj)
+    })
+
+    socket.on('startingPlayerFound', (obj) => {
+        console.log("a player has been voted to start " + obj.startingPlayerId)
+        io.in(obj.roomName).emit("startingPlayerFound", obj.startingPlayerId)
     })
 });
 
