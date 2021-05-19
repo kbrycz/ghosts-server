@@ -75,25 +75,33 @@ io.on('connection', (socket) => {
 
     socket.on('startGame', (obj) => {
         console.log("Host wants to start game. Setting up now...")
+        console.log(obj)
         let playersFinal = shuffle(obj.players)
         const words = obj.gameData.wordSet
-        const count = 0
+        let count = 0
         // Get all of the subtopic people in
         for (let i = 0; i < obj.gameData.numSubs; ++i) {
-            playersFinal[i].word = words.subs[i]
+            playersFinal[count].word = words.subs[i]
+            console.log("Inside subtopic")
+            console.log(playersFinal[count])
             count += 1
         }
         // Get all of the topic people in
         for (let i = 0; i < obj.gameData.numTops; ++i) {
-            playersFinal[i].word = words.topic
-            playersFinal[i].isTopic = true
+            playersFinal[count].word = words.topic
+            playersFinal[count].isTopic = true
+            console.log("Inside topic")
+            console.log(playersFinal[count])
             count += 1
         }       
         for (let i = 0; i < obj.gameData.numGhosts; ++i) {
-            playersFinal[i].word = 'ghost'
-            playersFinal[i].isGhost = true
+            playersFinal[count].word = 'ghost'
+            playersFinal[count].isGhost = true
+            console.log("Inside ghost")
+            console.log(playersFinal[count])
             count += 1
         }
+        console.log(playersFinal)
         io.in(obj.gameData.roomName).emit("startGame", playersFinal)
     })
 
