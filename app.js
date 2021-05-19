@@ -102,9 +102,14 @@ io.on('connection', (socket) => {
         socket.in(obj.roomName).emit("updateVote", obj)
     })
 
-    socket.on('startingPlayerFound', (obj) => {
-        console.log("a player has been voted to start " + obj.startingPlayerId)
-        io.in(obj.roomName).emit("startingPlayerFound", obj.startingPlayerId)
+    socket.on('votingFinished', (obj) => {
+        console.log("The voting has found a majority: " + obj.startingPlayerId)
+        io.in(obj.roomName).emit("votingFinished", obj.startingPlayerId)
+    })
+
+    socket.on('deletePlayer', (obj) => {
+        console.log("Attempting to mark play as dead")
+        io.in(obj.roomName).emit("deletePlayer", obj.eliminatedPlayerId)
     })
 });
 
