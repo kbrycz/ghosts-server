@@ -94,8 +94,7 @@ io.on('connection', (socket) => {
             playersFinal[count].isGhost = true
             count += 1
         }
-        console.log(playersFinal)
-        io.in(obj.gameData.roomName).emit("startGame", playersFinal)
+        io.in(obj.gameData.roomName).emit("startGame", shuffle(playersFinal))
     })
 
     socket.on('updateVote', (obj) => {
@@ -109,7 +108,7 @@ io.on('connection', (socket) => {
 
     socket.on('deletePlayer', (obj) => {
         console.log("Attempting to mark play as dead")
-        io.in(obj.roomName).emit("deletePlayer", obj.eliminatedPlayerId)
+        io.in(obj.roomName).emit("deletePlayer", obj)
     })
 });
 
