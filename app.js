@@ -126,7 +126,11 @@ io.on('connection', (socket) => {
 
     socket.on('ghostsGuessed', (obj) => {
         console.log("All ghost have guessed incorrectly. Players win!")
-        io.in(roomName).emit("ghostsGuessed", obj)
+        io.in(obj.roomName).emit("ghostsGuessed", obj)
+    })
+    socket.on('ghostsGuessed', (obj) => {
+        console.log("All ghost have guessed incorrectly. Players win!")
+        io.in(obj.roomName).emit("ghostsGuessed", obj)
     })
 });
 
