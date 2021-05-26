@@ -21,6 +21,7 @@ io.on('connection', (socket) => {
         console.log(obj)
         if (obj.roomName in rooms) {
             console.log('Error: room name already in use')
+            socket.emit('roomNameUsed')
         } else {
             rooms[obj.roomName] = {hostName: obj.hostName, hostSocket: socket.id}
             socket.join(obj.roomName)
