@@ -7,8 +7,8 @@ const io = require('socket.io')(http, {
     cookie: false
 });
 
-let rooms = {}
-
+let rooms = new Object()
+let socketRooms = new Object()
 
 // -------------------------------------ONCE A SOCKET HAS CONNECTED--------------------------------------
 
@@ -17,16 +17,22 @@ io.on('connection', (socket) => {
     console.log('We have a connection!');
 
     // -----------------Game Creation and joining-----------------
-    socket.on('createRoom', (obj) => {
-        console.log(obj)
-        if (obj.roomName in rooms) {
-            console.log('Error: room name already in use')
-            socket.emit('roomNameUsed')
-        } else {
-            rooms[obj.roomName] = {hostName: obj.hostName, hostSocket: socket.id}
-            socket.join(obj.roomName)
-            console.log('created room: ' + obj.roomName);
-            io.in(obj.roomName).emit('createRoom', obj);
+    socket.on('createRoom', () => {
+        let status = true
+        let roomName = ''
+        while (status) {
+            roomName = (Math.floor(10000 + Math.random() * 90000)).toString()
+            if (!(roomName in rooms)) {
+                status = false
+                rooms[roomName]= new Object()
+                rooms[roomName].hostId = socket.id
+                rooms[roomName].isStarted = false
+                rooms[roomName].numPlayers = 1
+                socket.join(roomName)
+                socketRooms[socket.id] = roomName
+                console.log('created room: ' + roomName);
+                io.in(roomName).emit('createRoom', roomName);
+            }
         }
     });
 
@@ -34,20 +40,20 @@ io.on('connection', (socket) => {
         console.log(roomName)
         if (roomName in rooms) {
             console.log("Room found with code " + roomName)
-            const obj = {roomName: roomName, hostName: rooms[roomName].hostName}
-            console.log(obj)
-            socket.emit('roomFound', obj)
+            socket.emit('roomExists', roomName)
         } else {
             console.log("No room found with code " + roomName)
-            socket.emit('roomNotFound', roomName)
+            socket.emit('roomDoesNotExist', roomName)
         }     
     })
 
     socket.on('addPlayerToLobby', (obj) => {
         if (obj.roomName in rooms) {
-            console.log("Room found with code " + obj.roomName)
+            console.log("Trying to send message to host in room " + obj.roomName)
             socket.join(obj.roomName)
-            io.to(rooms[obj.roomName].hostSocket).emit('addPlayerToLobby', obj.player);
+            socketRooms[socket.id] = obj.roomName
+            rooms[obj.roomName].numPlayers += 1
+            io.to(rooms[obj.roomName].hostId).emit('hostAddPlayer', obj.player);
         } else {
             console.log('Host deleted game with code ' + obj.roomName)
         }
@@ -55,14 +61,43 @@ io.on('connection', (socket) => {
 
     socket.on('hostUpdatePlayerToLobby', (obj) => {
         console.log("Got obj from host. Updating array for everyone")
-        console.log(obj.gameData.roomName)
-        socket.to(obj.gameData.roomName).emit('updatePlayersArray', obj)
+        socket.to(obj.gameData.code).emit('updatePlayersArray', obj)
     })
 
     socket.on('updateReadyUp', (obj) => {
         console.log("A player has ready upped")
-        socket.to(obj.roomName).emit('updateReadyUp', obj.playersInLobby)
+        socket.to(obj.code).emit('updateReadyUp', obj.playersInLobby)
     })
+
+    // ----------------Players leaving the game---------------------
+    socket.on('leavingGame', (code) => {
+        console.log("Player clicked the leaving game button. Disconnecting their socket")
+        socket.disconnect()
+    })
+
+    socket.on('disconnect', () => {
+        console.log("user has disconnected")
+        const code = socketRooms[socket.id]
+        if (rooms[code].hostId === socket.id) {
+            console.log("Host is ending the game")
+            rooms[code].numPlayers -= 1
+            if (!rooms[code].isStarted) {
+                socket.to(code).emit("hostEndedGame")
+            }
+            delete socketRooms[socket.id]
+        } else {
+            console.log("A normal player has disconnected from the game")
+            rooms[code].numPlayers -= 1
+            if (!rooms[code].isStarted) {
+                socket.to(code).emit("playerLeftLobby", socket.id)
+            }
+            delete socketRooms[socket.id]
+        }
+        if (rooms[code].numPlayers < 1) {
+            delete rooms[code]
+        }
+      })
+
 
     // -----------------Game Set up-----------------
 
