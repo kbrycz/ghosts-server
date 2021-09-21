@@ -78,6 +78,9 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log("user has disconnected")
         const code = socketRooms[socket.id]
+        if (!code || !code in rooms) {
+            return
+        }
         if (rooms[code].hostId === socket.id) {
             console.log("Host is ending the game")
             rooms[code].numPlayers -= 1
@@ -130,7 +133,14 @@ io.on('connection', (socket) => {
             playersFinal[count].isGhost = true
             count += 1
         }
-        io.in(obj.gameData.roomName).emit("startGame", shuffle(playersFinal))
+
+        let newObj = {
+            gameData: obj.gameData,
+            players: shuffle(obj.players),
+            code: obj.code
+        }
+        console.log("Sending game info to players")
+        io.in(obj.code).emit("startGame", newObj)
     })
 
     // -----------------Gameplay-----------------
