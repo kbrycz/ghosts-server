@@ -152,12 +152,13 @@ io.on('connection', (socket) => {
     // -----------------Gameplay-----------------
 
     socket.on('updateVote', (obj) => {
-        socket.in(obj.roomName).emit("updatePlayers", obj.players)
+        console.log("Updating the vote amount and sending users back players array")
+        socket.in(obj.code).emit("updatePlayers", obj.players)
     })
 
     socket.on('votingFinished', (obj) => {
         console.log("The voting has found a majority: " + obj.startingPlayerId)
-        io.in(obj.roomName).emit("votingFinished", obj.startingPlayerId)
+        io.in(obj.code).emit("votingFinished", obj.startingPlayerId)
     })
 
     socket.on('deletePlayer', (obj) => {
