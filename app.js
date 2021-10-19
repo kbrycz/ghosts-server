@@ -3,8 +3,11 @@ const app = express();
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     pingInterval: 10000,
-    pingTimeout: (1000 * 60) * 30,
-    cookie: false
+    pingTimeout: (1000 * 60) * 60,
+    cookie: false,
+    'reconnection': true,
+    'reconnectionDelay': 500,
+    'reconnectionAttempts': 10
 });
 
 let rooms = new Object()
@@ -88,6 +91,9 @@ io.on('connection', (socket) => {
                 socket.to(code).emit("hostEndedGame")
             }
             delete socketRooms[socket.id]
+            if (rooms[code].hasOwnProperty('numPlayers') && rooms[code].numPlayers < 1) {
+                delete rooms[code]
+            }
         } else {
             console.log("A normal player has disconnected from the game")
             rooms[code].numPlayers -= 1
@@ -95,9 +101,9 @@ io.on('connection', (socket) => {
                 socket.to(code).emit("playerLeftLobby", socket.id)
             }
             delete socketRooms[socket.id]
-        }
-        if (rooms[code].numPlayers < 1) {
-            delete rooms[code]
+            if (rooms[code].hasOwnProperty('numPlayers') && rooms[code].numPlayers < 1) {
+                delete rooms[code]
+            }
         }
       })
 
