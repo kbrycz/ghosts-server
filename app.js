@@ -167,23 +167,9 @@ io.on('connection', (socket) => {
     })
 
     // -----------------Game over-----------------
-    socket.on('ghostsGuessedRight', (roomName) => {
-        console.log("A ghost has guessed correctly. Ghosts win!")
-        io.in(roomName).emit("ghostsGuessedRight")
-    })
-
-    socket.on('ghostsGuessedWrong', (roomName) => {
-        console.log("All ghost have guessed incorrectly. Players win!")
-        io.in(roomName).emit("ghostsGuessedWrong")
-    })
-
-    socket.on('ghostsGuessed', (obj) => {
-        console.log("All ghost have guessed incorrectly. Players win!")
-        io.in(obj.roomName).emit("ghostsGuessed", obj)
-    })
-    socket.on('ghostsGuessed', (obj) => {
-        console.log("All ghost have guessed incorrectly. Players win!")
-        io.in(obj.roomName).emit("ghostsGuessed", obj)
+    socket.on('ghostGuessed', (obj) => {
+        console.log("A ghost has guessed!")
+        io.in(obj.code).emit("ghostGuessed", obj)
     })
 });
 
