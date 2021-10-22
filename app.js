@@ -1,3 +1,4 @@
+// Variables to manage server
 const express = require('express');
 const app = express();
 const http = require('http').Server(app);
@@ -20,6 +21,8 @@ io.on('connection', (socket) => {
     console.log('We have a connection!');
 
     // -----------------Game Creation and joining-----------------
+
+    // Host creates a room
     socket.on('createRoom', () => {
         let status = true
         let roomName = ''
@@ -39,6 +42,7 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Checks if room is available but does not join yet
     socket.on('isRoomAvailable', (roomName) => {
         console.log(roomName)
         if (roomName in rooms) {
@@ -50,6 +54,7 @@ io.on('connection', (socket) => {
         }     
     })
 
+    // Adds a player to the lobby if they are allowed
     socket.on('addPlayerToLobby', (obj) => {
         if (obj.roomName in rooms) {
             if (rooms[obj.roomName].numPlayers + 1 > 12 || rooms[obj.roomName].isStarted) {
@@ -70,28 +75,35 @@ io.on('connection', (socket) => {
         }
     }) 
 
+    // Host recieves player info and passes it on to the rest of the players
     socket.on('hostUpdatePlayerToLobby', (obj) => {
         console.log("Got obj from host. Updating array for everyone")
         socket.to(obj.gameData.code).emit('updatePlayersArray', obj)
     })
 
+    // Updates the ready up button
     socket.on('updateReadyUp', (obj) => {
         console.log("A player has ready upped")
         socket.to(obj.code).emit('updateReadyUp', obj.playersInLobby)
     })
 
     // ----------------Players leaving the game---------------------
+
+    // If player clicks the leaving game button
     socket.on('leavingGame', (code) => {
         console.log("Player clicked the leaving game button. Disconnecting their socket")
         socket.disconnect()
     })
 
+    // Player has disconnected from the game
     socket.on('disconnect', () => {
         console.log("user has disconnected")
         const code = socketRooms[socket.id]
         if (!code || !code in rooms) {
             return
         }
+
+        // Host is the one who disconnected
         if (rooms[code].hostId === socket.id) {
             console.log("Host is ending the game")
             rooms[code].numPlayers -= 1
@@ -102,7 +114,9 @@ io.on('connection', (socket) => {
                 console.log("deleting room")
                 delete rooms[code]
             }
-        } else {
+        } 
+        // Normal player disconnected
+        else {
             console.log("A normal player has disconnected from the game")
             rooms[code].numPlayers -= 1
 
@@ -118,6 +132,7 @@ io.on('connection', (socket) => {
 
     // -----------------Game Set up-----------------
 
+    // Shuffles an array
     function shuffle(a) {
         for (let i = a.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
@@ -126,6 +141,7 @@ io.on('connection', (socket) => {
         return a;
     }
 
+    // Gets the starter data and creates the game and starts it
     socket.on('startGame', (obj) => {
         console.log("Host wants to start game. Setting up now...")
 
@@ -170,22 +186,27 @@ io.on('connection', (socket) => {
 
     // -----------------Gameplay-----------------
 
+    // Updates a player vote
     socket.on('updateVote', (obj) => {
         console.log("Updating the vote amount and sending users back players array")
         socket.in(obj.code).emit("updatePlayers", obj.players)
     })
 
+    // Lets everyone know that the voting is finished
     socket.on('votingFinished', (obj) => {
         console.log("The voting has found a majority: " + obj.startingPlayerId)
         io.in(obj.code).emit("votingFinished", obj)
     })
 
+    // Deletes a player from the game
     socket.on('deletePlayer', (obj) => {
         console.log("Attempting to mark play as dead")
         io.in(obj.roomName).emit("deletePlayer", obj)
     })
 
     // -----------------Game over-----------------
+
+    // Lets players know that the ghost has guessed
     socket.on('ghostGuessed', (obj) => {
         console.log("A ghost has guessed!")
         io.in(obj.code).emit("ghostGuessed", obj)
