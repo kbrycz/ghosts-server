@@ -52,6 +52,14 @@ io.on('connection', (socket) => {
 
     socket.on('addPlayerToLobby', (obj) => {
         if (obj.roomName in rooms) {
+            if (rooms[obj.roomName].numPlayers + 1 > 12 || rooms[obj.roomName].isStarted) {
+                socket.emit('roomFull')
+                return
+            }
+            if (socket.id in socketRooms) {
+                console.log("User has already joined the game.")
+                return
+            }
             console.log("Trying to send message to host in room " + obj.roomName)
             socket.join(obj.roomName)
             socketRooms[socket.id] = obj.roomName
@@ -87,21 +95,21 @@ io.on('connection', (socket) => {
         if (rooms[code].hostId === socket.id) {
             console.log("Host is ending the game")
             rooms[code].numPlayers -= 1
-            if (!rooms[code].isStarted) {
-                socket.to(code).emit("hostEndedGame")
-            }
+
+            socket.to(code).emit("hostEndedGame")
             delete socketRooms[socket.id]
             if (rooms[code].hasOwnProperty('numPlayers') && rooms[code].numPlayers < 1) {
+                console.log("deleting room")
                 delete rooms[code]
             }
         } else {
             console.log("A normal player has disconnected from the game")
             rooms[code].numPlayers -= 1
-            if (!rooms[code].isStarted) {
-                socket.to(code).emit("playerLeftLobby", socket.id)
-            }
+
+            socket.to(code).emit("playerLeftLobby", socket.id)
             delete socketRooms[socket.id]
             if (rooms[code].hasOwnProperty('numPlayers') && rooms[code].numPlayers < 1) {
+                console.log("deleting room")
                 delete rooms[code]
             }
         }
@@ -120,12 +128,23 @@ io.on('connection', (socket) => {
 
     socket.on('startGame', (obj) => {
         console.log("Host wants to start game. Setting up now...")
+
+        if (rooms[obj.code].isStarted) {
+            console.log("Already started the game")
+            return
+        }
+        rooms[obj.code].isStarted = true
         let playersFinal = shuffle(obj.players)
         const words = obj.gameData.wordSet
         let count = 0
         // Get all of the subtopic people in
         for (let i = 0; i < obj.gameData.numSubs; ++i) {
-            playersFinal[count].word = words.subs[i]
+            if (words.subs[i].hasOwnProperty('word')) {
+                playersFinal[count].word = words.subs[i].word
+            } else {
+                playersFinal[count].word = words.subs[i]
+            }
+            
             count += 1
         }
         // Get all of the topic people in
@@ -142,9 +161,10 @@ io.on('connection', (socket) => {
 
         let newObj = {
             gameData: obj.gameData,
-            players: shuffle(obj.players),
+            players: shuffle(playersFinal),
             code: obj.code
         }
+        console.log(playersFinal)
         console.log("Sending game info to players")
         io.in(obj.code).emit("startGame", newObj)
     })
@@ -158,7 +178,7 @@ io.on('connection', (socket) => {
 
     socket.on('votingFinished', (obj) => {
         console.log("The voting has found a majority: " + obj.startingPlayerId)
-        io.in(obj.code).emit("votingFinished", obj.startingPlayerId)
+        io.in(obj.code).emit("votingFinished", obj)
     })
 
     socket.on('deletePlayer', (obj) => {
