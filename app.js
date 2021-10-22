@@ -164,7 +164,6 @@ io.on('connection', (socket) => {
             players: shuffle(playersFinal),
             code: obj.code
         }
-        console.log(playersFinal)
         console.log("Sending game info to players")
         io.in(obj.code).emit("startGame", newObj)
     })
