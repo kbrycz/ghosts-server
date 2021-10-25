@@ -84,7 +84,7 @@ io.on('connection', (socket) => {
     // Updates the ready up button
     socket.on('updateReadyUp', (obj) => {
         console.log("A player has ready upped")
-        socket.to(obj.code).emit('updateReadyUp', obj.playersInLobby)
+        io.to(obj.code).emit('updateReadyUp', obj.playersInLobby)
     })
 
     // ----------------Players leaving the game---------------------
@@ -189,7 +189,7 @@ io.on('connection', (socket) => {
     // Updates a player vote
     socket.on('updateVote', (obj) => {
         console.log("Updating the vote amount and sending users back players array")
-        socket.in(obj.code).emit("updatePlayers", obj.players)
+        io.in(obj.code).emit("updatePlayers", obj.players)
     })
 
     // Lets everyone know that the voting is finished
