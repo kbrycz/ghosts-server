@@ -219,4 +219,5 @@ app.get('/', (req, res) => {
 
 // -----------------LISTEN ON PORT 80-----------------
 
-http.listen(3000, () => console.log('listening on port 3000'))
+const PORT = process.env.PORT || 3000;
+http.listen(PORT, () => console.log(`listening on port ${PORT}`));
