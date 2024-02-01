@@ -213,6 +213,10 @@ io.on('connection', (socket) => {
     })
 });
 
+app.get('/', (req, res) => {
+    res.send('Server is up and running!');
+});
+
 // -----------------LISTEN ON PORT 80-----------------
 
 http.listen(3000, () => console.log('listening on port 3000'))
