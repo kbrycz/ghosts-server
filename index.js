@@ -1,8 +1,25 @@
-// Variables to manage server
 const express = require('express');
+const fs = require('fs');
+const https = require('https');
+const socketio = require('socket.io');
 const app = express();
-const http = require('http').Server(app);
-const io = require('socket.io')(http, {
+
+// Provide paths to the SSL certificate files
+const privateKey = fs.readFileSync('/etc/letsencrypt/live/www.ghosts-server.online/privkey.pem', 'utf8');
+const certificate = fs.readFileSync('/etc/letsencrypt/live/www.ghosts-server.online/cert.pem', 'utf8');
+const ca = fs.readFileSync('/etc/letsencrypt/live/www.ghosts-server.online/chain.pem', 'utf8');
+
+const credentials = {
+  key: privateKey,
+  cert: certificate,
+  ca: ca
+};
+
+// Create the HTTPS server
+const httpsServer = https.createServer(credentials, app);
+
+// Attach socket.io to the HTTPS server
+const io = socketio(httpsServer, {
     pingInterval: 10000,
     pingTimeout: (1000 * 60) * 60,
     cookie: false,
@@ -219,5 +236,7 @@ app.get('/', (req, res) => {
 
 // -----------------LISTEN ON PORT 80-----------------
 
-const PORT = 3000;
-http.listen(PORT, () => console.log(`listening on port ${PORT}`));
+// Listen on port 443 or any other port you want your server to be accessible on
+httpsServer.listen(443, () => {
+    console.log('HTTPS Server running on port 443');
+  });
